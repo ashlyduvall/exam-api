@@ -58,10 +58,12 @@ CREATE TABLE IF NOT EXISTS exam_tagset_tags (
 
 CREATE TABLE IF NOT EXISTS exams (
   id INT(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
+  fk_syllabus_id INT(11) NOT NULL,
   fk_exam_tagset_id INT(11) NOT NULL,
   create_date_time DATETIME NOT NULL,
   start_date_time DATETIME NULL DEFAULT NULL,
   complete_date_time DATETIME NULL DEFAULT NULL,
+  CONSTRAINT FOREIGN KEY (fk_syllabus_id) REFERENCES syllabus (id),
   CONSTRAINT FOREIGN KEY (fk_exam_tagset_id) REFERENCES exam_tagset (id)
 );
 

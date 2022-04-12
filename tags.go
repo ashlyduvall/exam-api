@@ -10,7 +10,7 @@ type tag struct {
 }
 
 func BuildTagRoutes(router *gin.Engine) {
-	router.GET("/tags/get/all", GetAllTags)
+	router.GET("/tags/all", GetAllTags)
 }
 
 func GetAllTags(ret *gin.Context) {

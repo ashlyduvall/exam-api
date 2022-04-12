@@ -9,6 +9,8 @@ func main() {
 	BuildTagRoutes(router)
 	BuildQuestionRoutes(router)
 	BuildQuestionAnswerRoutes(router)
+	BuildExamRoutes(router)
+	BuildExamTagsetRoutes(router)
 
 	router.Run(listenAddress)
 }

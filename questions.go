@@ -12,7 +12,7 @@ type question struct {
 }
 
 func BuildQuestionRoutes(router *gin.Engine) {
-	router.GET("/questions/get/all", GetAllQuestions)
+	router.GET("/questions/all", GetAllQuestions)
 }
 
 func GetAllQuestions(ret *gin.Context) {
@@ -32,4 +32,23 @@ func GetQuestionById(id int) question {
 	q.QuestionAnswers = GetQuestionAnswersByQuestion(q)
 
 	return q
+}
+
+func GetQuestionByIdAndExam(id int, e exam) question {
+	s := GetSyllabusById(1)
+	q := question{
+		ID:       1,
+		Syllabus: s,
+		Body:     "Here's some question text",
+	}
+	q.Tags = GetTagsByQuestion(q)
+	q.QuestionAnswers = GetQuestionAnswersByQuestionAndExam(q, e)
+
+	return q
+}
+
+func GetQuestionsByExam(e exam) []question {
+	return []question{
+		GetQuestionByIdAndExam(1, e),
+	}
 }
