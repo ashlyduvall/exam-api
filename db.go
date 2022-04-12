@@ -11,6 +11,8 @@ type sqlTestRow struct {
 	Value bool
 }
 
+var db *sql.DB
+
 func getConnectUrl() (string, error) {
 	DB_PASS, found := os.LookupEnv("DB_PASS")
 	if !found {
@@ -26,14 +28,15 @@ func getConnectUrl() (string, error) {
 	), nil
 }
 
-func TestDbConnectivity() error {
+func ConnectAndTestDB() error {
 	url, err := getConnectUrl()
 
 	if err != nil {
 		return err
 	}
 
-	db, err := sql.Open("mysql", url)
+	pool, err := sql.Open("mysql", url)
+	db = pool
 
 	if err != nil {
 		return err

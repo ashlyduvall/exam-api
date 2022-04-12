@@ -9,7 +9,7 @@ func main() {
 	listenAddress := GetConfig("LISTEN_ADDRESS", "0.0.0.0:8081")
 
 	// Check DB connectivity
-	err := TestDbConnectivity()
+	err := ConnectAndTestDB()
 
 	if err != nil {
 		fmt.Println("Unable to connect to database!")
