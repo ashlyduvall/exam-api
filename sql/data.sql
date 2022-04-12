@@ -49,7 +49,8 @@ INSERT IGNORE INTO exam_tagsets VALUES
 -- Exam Tagset Tags
 INSERT IGNORE INTO exam_tagset_tags VALUES
   (1, 1),
-  (2, 3), (2, 4)
+  (2, 3), (2, 4),
+  (3, 5)
 ;
 
 -- Exams
@@ -61,7 +62,9 @@ INSERT IGNORE INTO exams VALUES
 
 -- Exam Questions
 INSERT IGNORE INTO exam_questions VALUES
-  (1, 1), (2, 3), (2, 4), (3, 1)
+  (1, 1),
+  (2, 3), (2, 4),
+  (3, 5)
 ;
 
 -- Exam Question Answers

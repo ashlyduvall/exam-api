@@ -17,11 +17,16 @@ type exam struct {
 }
 
 func BuildExamRoutes(router *gin.Engine) {
-	router.GET("/exams/all", GetAllExams)
+	router.GET("/exams/:id", httpGetExamById)
 }
 
-func GetAllExams(ret *gin.Context) {
-	e, err := GetExamById("1")
+// -------------------
+// HTTP Methods Follow
+// -------------------
+
+func httpGetExamById(ret *gin.Context) {
+	exam_id := ret.Param("id")
+	e, err := GetExamById(exam_id)
 
 	if err != nil {
 		fmt.Println("Error getting exams!")
@@ -32,18 +37,27 @@ func GetAllExams(ret *gin.Context) {
 
 	ret.JSON(http.StatusOK, e)
 }
+
+// -------------------
+// Raw Methods Follow
+// -------------------
+
 func GetExamById(id string) (*exam, error) {
-	s, err := GetSyllabusById("1")
+	e := exam{}
+	var syllabus_id string
+	err := DB.QueryRow("SELECT id, fk_syllabus_id, create_date_time, IFNULL(start_date_time, ''), IFNULL(complete_date_time, '') FROM exams WHERE id=?", id).Scan(&e.ID, &syllabus_id, &e.CreateDateTime, &e.StartDateTime, &e.EndDateTime)
 
 	if err != nil {
 		return nil, err
 	}
 
-	e := exam{
-		ID:             1,
-		Syllabus:       s,
-		CreateDateTime: "2022-04-12T12:38:11Z",
+	s, err := GetSyllabusById(syllabus_id)
+	if err != nil {
+		return nil, err
 	}
+
+	e.Syllabus = s
+
 	etc, err := GetExamTagsetByExam(e)
 
 	if err != nil {
@@ -51,7 +65,7 @@ func GetExamById(id string) (*exam, error) {
 	}
 
 	e.ExamTagset = etc
-	q, err := GetQuestionsByExam(e)
+	q, err := GetQuestionsByExam(&e)
 
 	if err != nil {
 		return nil, err

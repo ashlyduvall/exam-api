@@ -22,7 +22,6 @@ func main() {
 	router := gin.Default()
 	BuildTagRoutes(router)
 	BuildQuestionRoutes(router)
-	BuildQuestionAnswerRoutes(router)
 	BuildExamRoutes(router)
 	BuildExamTagsetRoutes(router)
 
