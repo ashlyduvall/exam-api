@@ -9,8 +9,6 @@ CREATE TABLE IF NOT EXISTS syllabus (
   display_name VARCHAR(255) NOT NULL
 );
 
-INSERT IGNORE INTO syllabus VALUES (1, 'Test Syllabus');
-
 CREATE TABLE IF NOT EXISTS tags (
   id INT(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
   fk_syllabus_id INT(11) NOT NULL,
@@ -41,7 +39,7 @@ CREATE TABLE IF NOT EXISTS question_answers (
   CONSTRAINT FOREIGN KEY (fk_question_id) REFERENCES questions (id)
 );
 
-CREATE TABLE IF NOT EXISTS exam_tagset (
+CREATE TABLE IF NOT EXISTS exam_tagsets (
   id INT(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
   fk_syllabus_id INT(11) NOT NULL,
   display_name VARCHAR(255) NOT NULL,
@@ -52,7 +50,7 @@ CREATE TABLE IF NOT EXISTS exam_tagset_tags (
   fk_exam_tagset_id INT(11) NOT NULL,
   fk_tag_id INT(11) NOT NULL,
   PRIMARY KEY(fk_exam_tagset_id, fk_tag_id),
-  CONSTRAINT FOREIGN KEY (fk_exam_tagset_id) REFERENCES exam_tagset (id),
+  CONSTRAINT FOREIGN KEY (fk_exam_tagset_id) REFERENCES exam_tagsets (id),
   CONSTRAINT FOREIGN KEY (fk_tag_id) REFERENCES tags (id)
 );
 
@@ -64,7 +62,7 @@ CREATE TABLE IF NOT EXISTS exams (
   start_date_time DATETIME NULL DEFAULT NULL,
   complete_date_time DATETIME NULL DEFAULT NULL,
   CONSTRAINT FOREIGN KEY (fk_syllabus_id) REFERENCES syllabus (id),
-  CONSTRAINT FOREIGN KEY (fk_exam_tagset_id) REFERENCES exam_tagset (id)
+  CONSTRAINT FOREIGN KEY (fk_exam_tagset_id) REFERENCES exam_tagsets (id)
 );
 
 CREATE TABLE IF NOT EXISTS exam_questions (
