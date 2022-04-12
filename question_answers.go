@@ -1,7 +1,10 @@
 package main
 
-import "github.com/gin-gonic/gin"
-import "net/http"
+import (
+	"fmt"
+	"github.com/gin-gonic/gin"
+	"net/http"
+)
 
 type question_answer struct {
 	ID              int `json:"id"`
@@ -16,8 +19,15 @@ func BuildQuestionAnswerRoutes(router *gin.Engine) {
 }
 
 func GetAllQuestionAnswers(ret *gin.Context) {
-	q := GetQuestionById(1)
-	a := GetQuestionAnswersByQuestion(q)
+	q, err := GetQuestionById(1)
+
+	if err != nil {
+		fmt.Printf("Error getting question answers: %v\n", err)
+		ret.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	a := GetQuestionAnswersByQuestion(*q)
 
 	ret.JSON(http.StatusOK, a)
 }

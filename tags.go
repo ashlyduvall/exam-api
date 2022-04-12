@@ -1,11 +1,14 @@
 package main
 
-import "github.com/gin-gonic/gin"
-import "net/http"
+import (
+	"fmt"
+	"github.com/gin-gonic/gin"
+	"net/http"
+)
 
 type tag struct {
 	ID          int `json:"id"`
-	Syllabus    syllabus
+	Syllabus    *syllabus
 	DisplayName string `json:"display_name"`
 }
 
@@ -14,7 +17,14 @@ func BuildTagRoutes(router *gin.Engine) {
 }
 
 func GetAllTags(ret *gin.Context) {
-	s := GetSyllabusById(1)
+	s, err := GetSyllabusById(1)
+
+	if err != nil {
+		fmt.Printf("Error getting syllabus for tag: %v\n", err)
+		ret.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
 	t := tag{
 		ID:          1,
 		Syllabus:    s,
@@ -23,9 +33,15 @@ func GetAllTags(ret *gin.Context) {
 
 	ret.JSON(http.StatusOK, t)
 }
-func GetTagsByQuestion(q question) []tag {
-	s := GetSyllabusById(1)
-	return []tag{
-		{ID: 1, Syllabus: s, DisplayName: "Some Tag"},
+func GetTagsByQuestion(q question) (*[]*tag, error) {
+	s, err := GetSyllabusById(1)
+
+	if err != nil {
+		return nil, err
 	}
+
+	t := tag{ID: 1, Syllabus: s, DisplayName: "Some Tag"}
+	tt := []*tag{&t}
+
+	return &tt, nil
 }

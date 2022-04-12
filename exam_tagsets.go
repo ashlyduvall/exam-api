@@ -1,13 +1,16 @@
 package main
 
-import "github.com/gin-gonic/gin"
-import "net/http"
+import (
+	"fmt"
+	"github.com/gin-gonic/gin"
+	"net/http"
+)
 
 type exam_tagset struct {
-	ID          int      `json:"id"`
-	Syllabus    syllabus `json:"syllabus"`
-	DisplayName string   `json:"display_name"`
-	Tags        []tag    `json:"tags"`
+	ID          int       `json:"id"`
+	Syllabus    *syllabus `json:"syllabus"`
+	DisplayName string    `json:"display_name"`
+	Tags        []tag     `json:"tags"`
 }
 
 func BuildExamTagsetRoutes(router *gin.Engine) {
@@ -15,13 +18,39 @@ func BuildExamTagsetRoutes(router *gin.Engine) {
 }
 
 func GetAllExamTagsets(ret *gin.Context) {
-	e := GetExamById(1)
-	ets := GetExamTagsetByExam(e)
+	e, err := GetExamById(1)
+
+	if err != nil {
+		fmt.Println("Error getting exam tagsets!")
+		fmt.Println(err)
+		ret.JSON(http.StatusInternalServerError, gin.H{
+			"Message": "Error getting exam tagsets!",
+		})
+		return
+	}
+
+	ets, err := GetExamTagsetByExam(*e)
+
+	if err != nil {
+		fmt.Println("Error getting exam tagsets for this exam!")
+		fmt.Println(e)
+		fmt.Println(err)
+		ret.JSON(http.StatusInternalServerError, gin.H{
+			"Message": "Error getting exam tagsets!",
+		})
+		return
+	}
+
 	ret.JSON(http.StatusOK, ets)
 }
 
-func GetExamTagsetByExam(e exam) exam_tagset {
-	s := GetSyllabusById(1)
+func GetExamTagsetByExam(e exam) (*exam_tagset, error) {
+	s, err := GetSyllabusById(1)
+
+	if err != nil {
+		return nil, err
+	}
+
 	t := []tag{
 		{
 			ID:          1,
@@ -29,10 +58,10 @@ func GetExamTagsetByExam(e exam) exam_tagset {
 			DisplayName: "Some Tag",
 		},
 	}
-	return exam_tagset{
+	return &exam_tagset{
 		ID:          1,
 		Syllabus:    s,
 		DisplayName: "Some exam tagset",
 		Tags:        t,
-	}
+	}, nil
 }

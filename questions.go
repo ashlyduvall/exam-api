@@ -1,13 +1,16 @@
 package main
 
-import "github.com/gin-gonic/gin"
-import "net/http"
+import (
+	"fmt"
+	"github.com/gin-gonic/gin"
+	"net/http"
+)
 
 type question struct {
 	ID              int               `json:"id"`
-	Syllabus        syllabus          `json:"syllabus"`
+	Syllabus        *syllabus         `json:"syllabus"`
 	Body            string            `json:"body"`
-	Tags            []tag             `json:"tags"`
+	Tags            *[]*tag           `json:"tags"`
 	QuestionAnswers []question_answer `json:"question_answers"`
 }
 
@@ -16,39 +19,70 @@ func BuildQuestionRoutes(router *gin.Engine) {
 }
 
 func GetAllQuestions(ret *gin.Context) {
-	q := GetQuestionById(1)
+	q, err := GetQuestionById(1)
+	if err != nil {
+		fmt.Printf("Error getting all questions: %v\n", err)
+		ret.JSON(http.StatusInternalServerError, err)
+		return
+	}
 
 	ret.JSON(http.StatusOK, q)
 }
 
-func GetQuestionById(id int) question {
-	s := GetSyllabusById(1)
+func GetQuestionById(id int) (*question, error) {
+	s, err := GetSyllabusById(1)
+
+	if err != nil {
+		return nil, err
+	}
+
 	q := question{
 		ID:       1,
 		Syllabus: s,
 		Body:     "Here's some question text",
 	}
-	q.Tags = GetTagsByQuestion(q)
+	q_tags, err := GetTagsByQuestion(q)
+	if err != nil {
+		return nil, err
+	}
+	q.Tags = q_tags
 	q.QuestionAnswers = GetQuestionAnswersByQuestion(q)
 
-	return q
+	return &q, nil
 }
 
-func GetQuestionByIdAndExam(id int, e exam) question {
-	s := GetSyllabusById(1)
+func GetQuestionByIdAndExam(id int, e exam) (*question, error) {
+	s, err := GetSyllabusById(1)
+
+	if err != nil {
+		return nil, err
+	}
+
 	q := question{
 		ID:       1,
 		Syllabus: s,
 		Body:     "Here's some question text",
 	}
-	q.Tags = GetTagsByQuestion(q)
+	q_tags, err := GetTagsByQuestion(q)
+
+	if err != nil {
+		return nil, err
+	}
+
+	q.Tags = q_tags
 	q.QuestionAnswers = GetQuestionAnswersByQuestionAndExam(q, e)
 
-	return q
+	return &q, nil
 }
 
-func GetQuestionsByExam(e exam) []question {
-	return []question{
-		GetQuestionByIdAndExam(1, e),
+func GetQuestionsByExam(e exam) (*[]*question, error) {
+	q, err := GetQuestionByIdAndExam(1, e)
+
+	if err != nil {
+		return nil, err
 	}
+
+	ql := []*question{q}
+
+	return &ql, nil
 }

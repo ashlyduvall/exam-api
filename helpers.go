@@ -1,6 +1,8 @@
 package main
 
-import "os"
+import (
+	"os"
+)
 
 // General env var lookup with default function
 func GetConfig(key string, default_value string) string {
