@@ -9,6 +9,5 @@ func main() {
 	router := gin.Default()
 	BuildTagRoutes(router)
 
-	fmt.Printf("Application listening on %s.\n", listenAddress)
 	router.Run(listenAddress)
 }

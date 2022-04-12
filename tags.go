@@ -14,9 +14,14 @@ func BuildTagRoutes(router *gin.Engine) {
 }
 
 func GetTags(ret *gin.Context) {
-	ret.JSON(http.StatusOK, gin.H{
-		"message": "It works!",
-	})
+	s := GetSyllabusById(1)
+	t := tag{
+		ID:          1,
+		Syllabus:    s,
+		DisplayName: "Some Tag",
+	}
+
+	ret.JSON(http.StatusOK, t)
 }
 func GetTagById(ret *gin.Context) {
 	ret.JSON(http.StatusOK, gin.H{
