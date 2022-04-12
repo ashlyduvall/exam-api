@@ -17,6 +17,8 @@ func main() {
 		return
 	}
 
+	defer DB.Close()
+
 	router := gin.Default()
 	BuildTagRoutes(router)
 	BuildQuestionRoutes(router)

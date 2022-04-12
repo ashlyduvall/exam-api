@@ -11,7 +11,7 @@ type sqlTestRow struct {
 	Value bool
 }
 
-var db *sql.DB
+var DB *sql.DB
 
 func getConnectUrl() (string, error) {
 	DB_PASS, found := os.LookupEnv("DB_PASS")
@@ -36,15 +36,14 @@ func ConnectAndTestDB() error {
 	}
 
 	pool, err := sql.Open("mysql", url)
-	db = pool
+	DB = pool
 
 	if err != nil {
 		return err
 	}
 
-	defer db.Close()
 	var t sqlTestRow
-	err = db.QueryRow("SELECT 1 AS test").Scan(&t.Value)
+	err = DB.QueryRow("SELECT 1 AS test").Scan(&t.Value)
 
 	if err != nil {
 		return err
