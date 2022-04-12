@@ -23,8 +23,9 @@ func GetAllTags(ret *gin.Context) {
 
 	ret.JSON(http.StatusOK, t)
 }
-func GetTagById(ret *gin.Context) {
-	ret.JSON(http.StatusOK, gin.H{
-		"message": "It works!",
-	})
+func GetTagsByQuestion(q question) []tag {
+	s := GetSyllabusById(1)
+	return []tag{
+		{ID: 1, Syllabus: s, DisplayName: "Some Tag"},
+	}
 }

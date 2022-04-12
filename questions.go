@@ -7,6 +7,7 @@ type question struct {
 	ID              int               `json:"id"`
 	Syllabus        syllabus          `json:"syllabus"`
 	Body            string            `json:"body"`
+	Tags            []tag             `json:"tags"`
 	QuestionAnswers []question_answer `json:"question_answers"`
 }
 
@@ -27,6 +28,7 @@ func GetQuestionById(id int) question {
 		Syllabus: s,
 		Body:     "Here's some question text",
 	}
+	q.Tags = GetTagsByQuestion(q)
 	q.QuestionAnswers = GetQuestionAnswersByQuestion(q)
 
 	return q
