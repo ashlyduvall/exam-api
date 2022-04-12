@@ -4,16 +4,16 @@ import "github.com/gin-gonic/gin"
 import "net/http"
 
 type tag struct {
-	ID          int      `json:"id"`
-	Syllabus    syllabus `json:"syllabus"`
-	DisplayName string   `json:"display_name"`
+	ID          int `json:"id"`
+	Syllabus    syllabus
+	DisplayName string `json:"display_name"`
 }
 
 func BuildTagRoutes(router *gin.Engine) {
-	router.GET("/tags/get/all", GetTags)
+	router.GET("/tags/get/all", GetAllTags)
 }
 
-func GetTags(ret *gin.Context) {
+func GetAllTags(ret *gin.Context) {
 	s := GetSyllabusById(1)
 	t := tag{
 		ID:          1,
