@@ -1,19 +1,21 @@
 package main
 
-import "github.com/gin-gonic/gin"
-import "os"
-
-func getConfig(key string, default_value string) string {
-	value, found := os.LookupEnv(key)
-	if found {
-		return value
-	} else {
-		return default_value
-	}
-}
+import (
+	"fmt"
+	"github.com/gin-gonic/gin"
+)
 
 func main() {
-	listenAddress := getConfig("LISTEN_ADDRESS", "0.0.0.0:8081")
+	listenAddress := GetConfig("LISTEN_ADDRESS", "0.0.0.0:8081")
+
+	// Check DB connectivity
+	err := TestDbConnectivity()
+
+	if err != nil {
+		fmt.Println("Unable to connect to database!")
+		fmt.Println(err)
+		return
+	}
 
 	router := gin.Default()
 	BuildTagRoutes(router)
