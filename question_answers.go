@@ -19,7 +19,7 @@ func BuildQuestionAnswerRoutes(router *gin.Engine) {
 }
 
 func GetAllQuestionAnswers(ret *gin.Context) {
-	q, err := GetQuestionById(1)
+	q, err := GetQuestionById("1")
 
 	if err != nil {
 		fmt.Printf("Error getting question answers: %v\n", err)

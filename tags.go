@@ -17,7 +17,7 @@ func BuildTagRoutes(router *gin.Engine) {
 }
 
 func GetAllTags(ret *gin.Context) {
-	s, err := GetSyllabusById(1)
+	s, err := GetSyllabusById("1")
 
 	if err != nil {
 		fmt.Printf("Error getting syllabus for tag: %v\n", err)
@@ -34,7 +34,7 @@ func GetAllTags(ret *gin.Context) {
 	ret.JSON(http.StatusOK, t)
 }
 func GetTagsByQuestion(q question) (*[]*tag, error) {
-	s, err := GetSyllabusById(1)
+	s, err := GetSyllabusById("1")
 
 	if err != nil {
 		return nil, err

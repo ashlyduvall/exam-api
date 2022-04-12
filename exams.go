@@ -21,7 +21,7 @@ func BuildExamRoutes(router *gin.Engine) {
 }
 
 func GetAllExams(ret *gin.Context) {
-	e, err := GetExamById(1)
+	e, err := GetExamById("1")
 
 	if err != nil {
 		fmt.Println("Error getting exams!")
@@ -32,8 +32,8 @@ func GetAllExams(ret *gin.Context) {
 
 	ret.JSON(http.StatusOK, e)
 }
-func GetExamById(id int) (*exam, error) {
-	s, err := GetSyllabusById(1)
+func GetExamById(id string) (*exam, error) {
+	s, err := GetSyllabusById("1")
 
 	if err != nil {
 		return nil, err

@@ -14,14 +14,31 @@ type question struct {
 	QuestionAnswers []question_answer `json:"question_answers"`
 }
 
+// --------------------
+// HTTP Methods Follow
+// --------------------
+
 func BuildQuestionRoutes(router *gin.Engine) {
-	router.GET("/questions/all", GetAllQuestions)
+	router.GET("/questions/all", httpGetAllQuestions)
+	router.GET("/questions/:id", httpGetQuestionById)
 }
 
-func GetAllQuestions(ret *gin.Context) {
-	q, err := GetQuestionById(1)
+func httpGetAllQuestions(ret *gin.Context) {
+	q, err := GetQuestionById("1")
 	if err != nil {
 		fmt.Printf("Error getting all questions: %v\n", err)
+		ret.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ret.JSON(http.StatusOK, []*question{q})
+}
+
+func httpGetQuestionById(ret *gin.Context) {
+	question_id := ret.Param("id")
+	q, err := GetQuestionById(question_id)
+	if err != nil {
+		fmt.Printf("Error getting question: %v\n", err)
 		ret.JSON(http.StatusInternalServerError, err)
 		return
 	}
@@ -29,54 +46,37 @@ func GetAllQuestions(ret *gin.Context) {
 	ret.JSON(http.StatusOK, q)
 }
 
-func GetQuestionById(id int) (*question, error) {
-	s, err := GetSyllabusById(1)
+// -------------------
+// Raw Methods Follow
+// -------------------
 
+func GetQuestionById(id string) (*question, error) {
+	q := question{}
+	var syllabus_id string
+	err := DB.QueryRow("SELECT q.id, q.fk_syllabus_id, q.body FROM questions q WHERE id=?", id).Scan(&q.ID, &syllabus_id, &q.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	q := question{
-		ID:       1,
-		Syllabus: s,
-		Body:     "Here's some question text",
+	s, err := GetSyllabusById(syllabus_id)
+	if err != nil {
+		return nil, err
 	}
+
 	q_tags, err := GetTagsByQuestion(q)
 	if err != nil {
 		return nil, err
 	}
+
+	q.Syllabus = s
 	q.Tags = q_tags
 	q.QuestionAnswers = GetQuestionAnswersByQuestion(q)
 
 	return &q, nil
 }
 
-func GetQuestionByIdAndExam(id int, e exam) (*question, error) {
-	s, err := GetSyllabusById(1)
-
-	if err != nil {
-		return nil, err
-	}
-
-	q := question{
-		ID:       1,
-		Syllabus: s,
-		Body:     "Here's some question text",
-	}
-	q_tags, err := GetTagsByQuestion(q)
-
-	if err != nil {
-		return nil, err
-	}
-
-	q.Tags = q_tags
-	q.QuestionAnswers = GetQuestionAnswersByQuestionAndExam(q, e)
-
-	return &q, nil
-}
-
 func GetQuestionsByExam(e exam) (*[]*question, error) {
-	q, err := GetQuestionByIdAndExam(1, e)
+	q, err := GetQuestionById("1")
 
 	if err != nil {
 		return nil, err

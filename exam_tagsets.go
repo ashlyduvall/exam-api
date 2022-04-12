@@ -18,7 +18,7 @@ func BuildExamTagsetRoutes(router *gin.Engine) {
 }
 
 func GetAllExamTagsets(ret *gin.Context) {
-	e, err := GetExamById(1)
+	e, err := GetExamById("1")
 
 	if err != nil {
 		fmt.Println("Error getting exam tagsets!")
@@ -45,7 +45,7 @@ func GetAllExamTagsets(ret *gin.Context) {
 }
 
 func GetExamTagsetByExam(e exam) (*exam_tagset, error) {
-	s, err := GetSyllabusById(1)
+	s, err := GetSyllabusById("1")
 
 	if err != nil {
 		return nil, err

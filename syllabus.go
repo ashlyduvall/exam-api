@@ -5,7 +5,7 @@ type syllabus struct {
 	DisplayName string `json:"display_name"`
 }
 
-func GetSyllabusById(id int) (*syllabus, error) {
+func GetSyllabusById(id string) (*syllabus, error) {
 	s := syllabus{}
 	err := DB.QueryRow("SELECT s.id, s.display_name FROM syllabus s WHERE s.id=?", id).Scan(&s.ID, &s.DisplayName)
 
