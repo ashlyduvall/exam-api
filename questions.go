@@ -24,14 +24,21 @@ func BuildQuestionRoutes(router *gin.Engine) {
 }
 
 func httpGetAllQuestions(ret *gin.Context) {
-	q, err := GetQuestionById("1")
+	s, err := GetSyllabusById("1")
+	if err != nil {
+		fmt.Printf("Error getting all questions - couldn't find Syllabus: %v\n", err)
+		ret.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	q, err := GetQuestionsBySyllabus(s)
 	if err != nil {
 		fmt.Printf("Error getting all questions: %v\n", err)
 		ret.JSON(http.StatusInternalServerError, err)
 		return
 	}
 
-	ret.JSON(http.StatusOK, []*question{q})
+	ret.JSON(http.StatusOK, q)
 }
 
 func httpGetQuestionById(ret *gin.Context) {
@@ -50,6 +57,45 @@ func httpGetQuestionById(ret *gin.Context) {
 // Raw Methods Follow
 // -------------------
 
+func GetQuestionsBySyllabus(s *syllabus) (*[]*question, error) {
+	var ret []*question
+
+	rows, err := DB.Query("SELECT q.id, q.body FROM questions q WHERE q.fk_syllabus_id=?", s.ID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		q := question{
+			Syllabus: s,
+		}
+
+		err := rows.Scan(&q.ID, &q.Body)
+		if err != nil {
+			return nil, err
+		}
+
+		q_tags, err := GetTagsByQuestion(&q)
+		if err != nil {
+			return nil, err
+		}
+		q.Tags = q_tags
+
+		q_answers, err := GetQuestionAnswersByQuestion(&q)
+		if err != nil {
+			return nil, err
+		}
+		q.QuestionAnswers = q_answers
+
+		ret = append(ret, &q)
+	}
+
+	return &ret, nil
+}
+
 func GetQuestionById(id string) (*question, error) {
 	q := question{}
 	var syllabus_id string
@@ -63,7 +109,7 @@ func GetQuestionById(id string) (*question, error) {
 		return nil, err
 	}
 
-	q_tags, err := GetTagsByQuestion(q)
+	q_tags, err := GetTagsByQuestion(&q)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +138,7 @@ func GetQuestionByIdWithExamData(id string, e *exam) (*question, error) {
 		return nil, err
 	}
 
-	q_tags, err := GetTagsByQuestion(q)
+	q_tags, err := GetTagsByQuestion(&q)
 	if err != nil {
 		return nil, err
 	}

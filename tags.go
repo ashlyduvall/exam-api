@@ -12,11 +12,15 @@ type tag struct {
 	DisplayName string `json:"display_name"`
 }
 
+// --------------------
+// HTTP Methods Follow
+// --------------------
+
 func BuildTagRoutes(router *gin.Engine) {
-	router.GET("/tags/all", GetAllTags)
+	router.GET("/tags/all", httpGetAllTags)
 }
 
-func GetAllTags(ret *gin.Context) {
+func httpGetAllTags(ret *gin.Context) {
 	s, err := GetSyllabusById("1")
 
 	if err != nil {
@@ -25,23 +29,81 @@ func GetAllTags(ret *gin.Context) {
 		return
 	}
 
-	t := tag{
-		ID:          1,
-		Syllabus:    s,
-		DisplayName: "Some Tag",
+	t, err := GetTagsBySyllabus(s)
+
+	if err != nil {
+		fmt.Printf("Error getting syllabus for tag: %v\n", err)
+		ret.JSON(http.StatusInternalServerError, err)
+		return
 	}
 
 	ret.JSON(http.StatusOK, t)
 }
-func GetTagsByQuestion(q question) (*[]*tag, error) {
-	s, err := GetSyllabusById("1")
+
+// --------------------
+// Raw Methods Follow
+// --------------------
+
+func GetTagsBySyllabus(s *syllabus) (*[]*tag, error) {
+
+	var ret []*tag
+
+	rows, err := DB.Query("SELECT t.ID, t.display_name FROM tags t WHERE fk_syllabus_id=?", s.ID)
 
 	if err != nil {
 		return nil, err
 	}
 
-	t := tag{ID: 1, Syllabus: s, DisplayName: "Some Tag"}
-	tt := []*tag{&t}
+	defer rows.Close()
 
-	return &tt, nil
+	for rows.Next() {
+		t := tag{
+			Syllabus: s,
+		}
+
+		err := rows.Scan(&t.ID, &t.DisplayName)
+
+		if err != nil {
+			return nil, err
+		}
+
+		ret = append(ret, &t)
+	}
+
+	return &ret, nil
+}
+
+func GetTagsByQuestion(q *question) (*[]*tag, error) {
+
+	var ret []*tag
+
+	rows, err := DB.Query(`
+		SELECT t.ID
+		     , t.display_name 
+			FROM tags t 
+		 INNER JOIN question_tags qt ON qt.fk_tag_id = t.id
+		 WHERE qt.fk_question_id=?
+	`, q.ID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		t := tag{
+			Syllabus: q.Syllabus,
+		}
+
+		err := rows.Scan(&t.ID, &t.DisplayName)
+
+		if err != nil {
+			return nil, err
+		}
+
+		ret = append(ret, &t)
+	}
+
+	return &ret, nil
 }
