@@ -21,6 +21,7 @@ type question struct {
 func BuildQuestionRoutes(router *gin.Engine) {
 	router.GET("/questions/all", httpGetAllQuestions)
 	router.GET("/questions/:id", httpGetQuestionById)
+	router.POST("/questions/save", httpPostSaveQuestion)
 }
 
 func httpGetAllQuestions(ret *gin.Context) {
@@ -49,6 +50,21 @@ func httpGetQuestionById(ret *gin.Context) {
 		ret.JSON(http.StatusInternalServerError, err)
 		return
 	}
+
+	ret.JSON(http.StatusOK, q)
+}
+
+func httpPostSaveQuestion(ret *gin.Context) {
+	var q question
+	ret.BindJSON(&q)
+	fmt.Print(q)
+
+	// Save tags
+	SetQuestionTags(&q)
+
+	// Save answers
+
+	// Save question body
 
 	ret.JSON(http.StatusOK, q)
 }
@@ -186,4 +202,30 @@ func GetQuestionsByExam(e *exam) (*[]*question, error) {
 	}
 
 	return &questions, nil
+}
+
+func SetQuestionTags(q *question) error {
+	tx, err := DB.Begin()
+
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
+
+	_, err = tx.Exec("DELETE FROM question_tags WHERE fk_question_id=?", q.ID)
+
+	if err != nil {
+		return err
+	}
+
+	for _, t := range *q.Tags {
+		_, err := tx.Exec("INSERT INTO question_tags (fk_question_id, fk_tag_id) VALUES (?, ?)", q.ID, t.ID)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
 }

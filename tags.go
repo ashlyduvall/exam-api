@@ -78,7 +78,7 @@ func httpPostGetOrCreate(ret *gin.Context) {
 
 func GetTagsBySyllabus(s *syllabus) (*[]*tag, error) {
 
-	var ret []*tag
+	ret := make([]*tag, 0)
 
 	rows, err := DB.Query("SELECT t.ID, t.display_name FROM tags t WHERE fk_syllabus_id=?", s.ID)
 
@@ -107,7 +107,7 @@ func GetTagsBySyllabus(s *syllabus) (*[]*tag, error) {
 
 func GetTagsByQuestion(q *question) (*[]*tag, error) {
 
-	var ret []*tag
+	ret := make([]*tag, 0)
 
 	rows, err := DB.Query(`
 		SELECT t.id
@@ -118,6 +118,7 @@ func GetTagsByQuestion(q *question) (*[]*tag, error) {
 	`, q.ID)
 
 	if err != nil {
+		fmt.Printf("Error getting tags for question %v, %v", q.ID, err)
 		return nil, err
 	}
 
@@ -131,6 +132,7 @@ func GetTagsByQuestion(q *question) (*[]*tag, error) {
 		err := rows.Scan(&t.ID, &t.DisplayName)
 
 		if err != nil {
+			fmt.Printf("Error getting tags for question %v, %v", q.ID, err)
 			return nil, err
 		}
 
@@ -142,34 +144,23 @@ func GetTagsByQuestion(q *question) (*[]*tag, error) {
 
 func GetTagBySyllabusAndDisplayName(s *syllabus, d string) (*tag, error) {
 
-	var ret tag
+	ret := tag{
+		Syllabus: s,
+	}
 
-	rows, err := DB.Query(`
+	row := DB.QueryRow(`
 		SELECT t.id
 		     , t.display_name 
 			FROM tags t 
 		 WHERE t.fk_syllabus_id = ?
 		   AND t.display_name = ?
+		 LIMIT 1
 	`, s.ID, d)
+
+	err := row.Scan(&ret.ID, &ret.DisplayName)
 
 	if err != nil {
 		return nil, err
-	}
-
-	defer rows.Close()
-
-	for rows.Next() {
-		t := tag{
-			Syllabus: s,
-		}
-
-		err := rows.Scan(&t.ID, &t.DisplayName)
-
-		if err != nil {
-			return nil, err
-		}
-
-		ret = t
 	}
 
 	return &ret, nil
@@ -179,6 +170,7 @@ func CreateNewTag(s *syllabus, d string) (*tag, error) {
 	ret := tag{}
 	ret.Syllabus = s
 	ret.DisplayName = d
+	fmt.Printf("Creating new tag for Syllabus %v, %v", s.ID, d)
 
 	tx, err := DB.Begin()
 
