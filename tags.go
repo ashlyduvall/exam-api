@@ -51,10 +51,14 @@ func httpPostGetOrCreate(ret *gin.Context) {
 		return
 	}
 
-	t, err := GetTagBySyllabusAndDisplayName(s, "Tag 2")
+	var inputJson tag
+	ret.BindJSON(&inputJson)
+	displayName := inputJson.DisplayName
+
+	t, err := GetTagBySyllabusAndDisplayName(s, displayName)
 
 	if err == sql.ErrNoRows {
-		s_t, s_err := CreateNewTag(s, "Tag 2")
+		s_t, s_err := CreateNewTag(s, displayName)
 		t = s_t
 		err = s_err
 	}
