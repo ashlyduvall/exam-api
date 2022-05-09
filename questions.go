@@ -63,6 +63,7 @@ func httpPostSaveQuestion(ret *gin.Context) {
 	SetQuestionTags(&q)
 
 	// Save answers
+	// SetQuestionAnswers(&q)
 
 	// Save question body
 
