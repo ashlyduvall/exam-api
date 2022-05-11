@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strings"
 )
 
 type question struct {
@@ -255,6 +256,9 @@ func SetQuestionAnswers(q *question) error {
 
 	defer tx.Rollback()
 
+	var answers_to_keep []interface{}
+	answers_to_keep = append(answers_to_keep, q.ID)
+
 	for _, a := range *q.QuestionAnswers {
 		var err error
 		if a.ID > 0 {
@@ -265,16 +269,48 @@ func SetQuestionAnswers(q *question) error {
 				 WHERE id=?
 			`, a.IsCorrectAnswer, a.Body, a.ID)
 			err = e
+			answers_to_keep = append(answers_to_keep, a.ID)
 		} else {
-			_, e := tx.Exec(`
+			result, e := tx.Exec(`
         INSERT INTO question_answers (fk_question_id, is_correct_answer, body) VALUES (?, ?, ?)
 			`, q.ID, a.IsCorrectAnswer, a.Body)
 			err = e
+			id, _ := result.LastInsertId()
+			answers_to_keep = append(answers_to_keep, int(id))
 		}
 
 		if err != nil {
 			return err
 		}
+
+	}
+
+	fmt.Println(answers_to_keep)
+
+	// Handle removing answers
+
+	var sql string
+	if len(answers_to_keep) == 0 {
+		sql = `
+			UPDATE question_answers
+				 SET is_deleted = TRUE
+			 WHERE fk_question_id = ?
+    `
+	} else {
+		q_marks := strings.Repeat("?,", len(answers_to_keep)-1)
+		q_marks = q_marks[:len(q_marks)-1]
+		sql = fmt.Sprintf(`
+			UPDATE question_answers
+				 SET is_deleted = TRUE
+			 WHERE fk_question_id = ?
+		     AND id NOT IN (%v)
+    `, q_marks)
+	}
+
+	_, err = tx.Exec(sql, answers_to_keep...)
+
+	if err != nil {
+		return err
 	}
 
 	return tx.Commit()
