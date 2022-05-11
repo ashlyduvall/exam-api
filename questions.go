@@ -75,6 +75,12 @@ func httpPostSaveQuestion(ret *gin.Context) {
 	}
 
 	// Save question body
+	err = SetQuestionBody(&q)
+
+	if err != nil {
+		ret.JSON(http.StatusInternalServerError, err)
+		return
+	}
 
 	ret.JSON(http.StatusOK, q)
 }
@@ -250,8 +256,6 @@ func SetQuestionAnswers(q *question) error {
 	defer tx.Rollback()
 
 	for _, a := range *q.QuestionAnswers {
-		fmt.Println(a)
-
 		var err error
 		if a.ID > 0 {
 			_, e := tx.Exec(`
@@ -271,6 +275,28 @@ func SetQuestionAnswers(q *question) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	return tx.Commit()
+}
+
+func SetQuestionBody(q *question) error {
+	tx, err := DB.Begin()
+
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
+
+	_, err = tx.Exec(`
+		UPDATE questions
+			 SET body=?
+		 WHERE id=?
+	`, q.Body, q.ID)
+
+	if err != nil {
+		return err
 	}
 
 	return tx.Commit()
