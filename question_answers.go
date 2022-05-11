@@ -11,7 +11,14 @@ type question_answer struct {
 func GetQuestionAnswersByQuestion(q *question) (*[]*question_answer, error) {
 	var question_answers []*question_answer
 
-	rows, err := DB.Query("SELECT id, is_correct_answer, body FROM question_answers WHERE fk_question_id=?", q.ID)
+	rows, err := DB.Query(`
+		SELECT id
+		     , is_correct_answer
+				 , body 
+			FROM question_answers 
+		 WHERE fk_question_id=?
+		   AND is_deleted IS FALSE
+	`, q.ID)
 	if err != nil {
 		return nil, err
 	}

@@ -57,13 +57,22 @@ func httpGetQuestionById(ret *gin.Context) {
 func httpPostSaveQuestion(ret *gin.Context) {
 	var q question
 	ret.BindJSON(&q)
-	fmt.Print(q)
 
 	// Save tags
-	SetQuestionTags(&q)
+	err := SetQuestionTags(&q)
+
+	if err != nil {
+		ret.JSON(http.StatusInternalServerError, err)
+		return
+	}
 
 	// Save answers
-	// SetQuestionAnswers(&q)
+	err = SetQuestionAnswers(&q)
+
+	if err != nil {
+		ret.JSON(http.StatusInternalServerError, err)
+		return
+	}
 
 	// Save question body
 
@@ -222,6 +231,42 @@ func SetQuestionTags(q *question) error {
 
 	for _, t := range *q.Tags {
 		_, err := tx.Exec("INSERT INTO question_tags (fk_question_id, fk_tag_id) VALUES (?, ?)", q.ID, t.ID)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
+func SetQuestionAnswers(q *question) error {
+	tx, err := DB.Begin()
+
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
+
+	for _, a := range *q.QuestionAnswers {
+		fmt.Println(a)
+
+		var err error
+		if a.ID > 0 {
+			_, e := tx.Exec(`
+				UPDATE question_answers
+				   SET is_correct_answer=?
+					   , body=?
+				 WHERE id=?
+			`, a.IsCorrectAnswer, a.Body, a.ID)
+			err = e
+		} else {
+			_, e := tx.Exec(`
+        INSERT INTO question_answers (fk_question_id, is_correct_answer, body) VALUES (?, ?, ?)
+			`, q.ID, a.IsCorrectAnswer, a.Body)
+			err = e
+		}
 
 		if err != nil {
 			return err

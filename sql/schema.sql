@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS question_answers (
   id INT(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
   fk_question_id INT(11) NOT NULL,
   is_correct_answer BOOLEAN DEFAULT FALSE,
+  is_deleted BOOLEAN DEFAULT FALSE,
   body VARCHAR(2048) NOT NULL,
   CONSTRAINT FOREIGN KEY (fk_question_id) REFERENCES questions (id)
 );

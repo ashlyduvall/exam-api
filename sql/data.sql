@@ -31,7 +31,7 @@ INSERT IGNORE INTO question_tags VALUES
 ;
 
 -- Question answers
-INSERT IGNORE INTO question_answers VALUES
+INSERT IGNORE INTO question_answers (id, fk_question_id, is_correct_answer, body) VALUES
   (1, 1, true, "Correct answer to question 1"), (2, 1, false, "Incorrect answer to question 1"),
   (3, 2, true, "Correct answer to question 2"), (4, 2, false, "Incorrect answer to question 2"),
   (5, 3, true, "Correct answer to question 3"), (6, 3, false, "Incorrect answer to question 3"),
