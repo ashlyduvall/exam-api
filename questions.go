@@ -290,7 +290,7 @@ func SetQuestionAnswers(q *question) error {
 	// Handle removing answers
 
 	var sql string
-	if len(answers_to_keep) == 0 {
+	if len(answers_to_keep) == 1 {
 		sql = `
 			UPDATE question_answers
 				 SET is_deleted = TRUE

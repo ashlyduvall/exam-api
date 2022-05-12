@@ -9,7 +9,7 @@ type question_answer struct {
 }
 
 func GetQuestionAnswersByQuestion(q *question) (*[]*question_answer, error) {
-	var question_answers []*question_answer
+	question_answers := make([]*question_answer, 0)
 
 	rows, err := DB.Query(`
 		SELECT id
@@ -40,7 +40,7 @@ func GetQuestionAnswersByQuestion(q *question) (*[]*question_answer, error) {
 }
 
 func GetQuestionAnswersByQuestionAndExam(q *question, e *exam) (*[]*question_answer, error) {
-	var question_answers []*question_answer
+	question_answers := make([]*question_answer, 0)
 
 	rows, err := DB.Query(`
 		SELECT qa.id
