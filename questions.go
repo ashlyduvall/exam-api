@@ -59,6 +59,14 @@ func httpPostSaveQuestion(ret *gin.Context) {
 	var q question
 	ret.BindJSON(&q)
 
+	if q.ID == 0 {
+		err := NewQuestion(&q)
+		if err != nil {
+			ret.JSON(http.StatusInternalServerError, err)
+			return
+		}
+	}
+
 	// Save tags
 	err := SetQuestionTags(&q)
 
@@ -312,6 +320,34 @@ func SetQuestionAnswers(q *question) error {
 	if err != nil {
 		return err
 	}
+
+	return tx.Commit()
+}
+
+func NewQuestion(q *question) error {
+	tx, err := DB.Begin()
+
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
+
+	result, err := tx.Exec(`
+    INSERT INTO questions (fk_syllabus_id, body) VALUES (?, ?)
+	`, q.Syllabus.ID, q.Body)
+
+	if err != nil {
+		return err
+	}
+
+	id, err := result.LastInsertId()
+
+	if err != nil {
+		return err
+	}
+
+	q.ID = int(id)
 
 	return tx.Commit()
 }
