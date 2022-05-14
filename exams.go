@@ -19,6 +19,7 @@ type exam struct {
 func BuildExamRoutes(router *gin.Engine) {
 	router.GET("/exams/all", httpGetAllExams)
 	router.GET("/exams/:id", httpGetExamById)
+	router.POST("/exams/save", httpPostSaveExam)
 }
 
 // -------------------
@@ -51,6 +52,22 @@ func httpGetExamById(ret *gin.Context) {
 	}
 
 	ret.JSON(http.StatusOK, e)
+}
+
+func httpPostSaveExam(ret *gin.Context) {
+	var e exam
+	ret.BindJSON(&e)
+
+	err := SetExamQuestionAnswers(&e)
+
+	if err != nil {
+		fmt.Println("Error saving exam!")
+		fmt.Println(err)
+		ret.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ret.JSON(http.StatusOK, gin.H{"message": "Exam Saved!"})
 }
 
 // -------------------
@@ -144,4 +161,41 @@ func GetExamsBySyllabus(s *syllabus) (*[]*exam, error) {
 	}
 
 	return &exams, nil
+}
+
+func SetExamQuestionAnswers(e *exam) error {
+	tx, err := DB.Begin()
+
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
+
+	// Remove all existing answers for this exam
+	_, err = tx.Exec(`
+    DELETE FROM exam_question_answers
+		 WHERE fk_exam_id = ?
+	`, e.ID)
+
+	if err != nil {
+		return err
+	}
+
+	// Insert current state
+	for _, q := range *e.Questions {
+		for _, a := range *q.QuestionAnswers {
+			if a.IsSelected {
+				_, err := tx.Exec(`
+					INSERT INTO exam_question_answers (fk_exam_id, fk_question_id, fk_selected_answer_id)
+					 VALUES (?, ?, ?)
+				`, e.ID, q.ID, a.ID)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return tx.Commit()
 }
