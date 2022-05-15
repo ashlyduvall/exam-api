@@ -7,28 +7,46 @@ import (
 )
 
 type exam struct {
-	ID             int          `json:"id"`
-	Syllabus       *syllabus    `json:"syllabus"`
-	ExamTagset     *exam_tagset `json:"exam_tagset"`
-	Questions      *[]*question `json:"questions"`
-	CreateDateTime string       `json:"create_date_time"`
-	StartDateTime  string       `json:"start_date_time"`
-	EndDateTime    string       `json:"end_date_time"`
+	ID               int          `json:"id"`
+	Syllabus         *syllabus    `json:"syllabus"`
+	ExamTagset       *exam_tagset `json:"exam_tagset"`
+	Questions        *[]*question `json:"questions"`
+	CreateDateTime   string       `json:"create_date_time"`
+	StartDateTime    string       `json:"start_date_time"`
+	CompleteDateTime string       `json:"complete_date_time"`
 }
 
 func BuildExamRoutes(router *gin.Engine) {
-	router.GET("/exams/all", httpGetAllExams)
+	router.GET("/exams/all/in_progress", httpGetAllExamsInProgress)
+	router.GET("/exams/all/finished", httpGetAllExamsFinished)
 	router.GET("/exams/:id", httpGetExamById)
 	router.POST("/exams/save", httpPostSaveExam)
+	router.POST("/exams/finish", httpPostFinishExam)
 }
 
 // -------------------
 // HTTP Methods Follow
 // -------------------
 
-func httpGetAllExams(ret *gin.Context) {
+func httpGetAllExamsInProgress(ret *gin.Context) {
 	s, _ := GetSyllabusById("1")
-	e, err := GetExamsBySyllabus(s)
+	GetFinishedExams := false
+	e, err := GetExamsBySyllabus(s, GetFinishedExams)
+
+	if err != nil {
+		fmt.Println("Error getting exams!")
+		fmt.Println(err)
+		ret.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ret.JSON(http.StatusOK, e)
+}
+
+func httpGetAllExamsFinished(ret *gin.Context) {
+	s, _ := GetSyllabusById("1")
+	GetFinishedExams := true
+	e, err := GetExamsBySyllabus(s, GetFinishedExams)
 
 	if err != nil {
 		fmt.Println("Error getting exams!")
@@ -70,6 +88,22 @@ func httpPostSaveExam(ret *gin.Context) {
 	ret.JSON(http.StatusOK, gin.H{"message": "Exam Saved!"})
 }
 
+func httpPostFinishExam(ret *gin.Context) {
+	var e exam
+	ret.BindJSON(&e)
+
+	err := SetExamFinished(&e)
+
+	if err != nil {
+		fmt.Println("Error finishing exam!")
+		fmt.Println(err)
+		ret.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ret.JSON(http.StatusOK, gin.H{"message": "Exam Finished!"})
+}
+
 // -------------------
 // Raw Methods Follow
 // -------------------
@@ -85,7 +119,7 @@ func GetExamById(id string) (*exam, error) {
 				 , IFNULL(complete_date_time, '')
 			FROM exams 
 		 WHERE id=?
-	`, id).Scan(&e.ID, &syllabus_id, &e.CreateDateTime, &e.StartDateTime, &e.EndDateTime)
+	`, id).Scan(&e.ID, &syllabus_id, &e.CreateDateTime, &e.StartDateTime, &e.CompleteDateTime)
 
 	if err != nil {
 		return nil, err
@@ -115,16 +149,27 @@ func GetExamById(id string) (*exam, error) {
 	return &e, nil
 }
 
-func GetExamsBySyllabus(s *syllabus) (*[]*exam, error) {
+func GetExamsBySyllabus(s *syllabus, get_finished bool) (*[]*exam, error) {
 	exams := make([]*exam, 0)
 
-	rows, err := DB.Query(`
+	var get_finished_sql string
+
+	if get_finished {
+		get_finished_sql = "WHERE complete_date_time IS NOT NULL"
+	} else {
+		get_finished_sql = "WHERE complete_date_time IS NULL"
+	}
+
+	sql := fmt.Sprintf(`
 		SELECT id
 				 , create_date_time
 				 , IFNULL(start_date_time, '')
 				 , IFNULL(complete_date_time, '')
 			FROM exams 
-	`)
+			%v
+	`, get_finished_sql)
+
+	rows, err := DB.Query(sql)
 
 	if err != nil {
 		return nil, err
@@ -137,7 +182,7 @@ func GetExamsBySyllabus(s *syllabus) (*[]*exam, error) {
 			Syllabus: s,
 		}
 
-		err := rows.Scan(&e.ID, &e.CreateDateTime, &e.StartDateTime, &e.EndDateTime)
+		err := rows.Scan(&e.ID, &e.CreateDateTime, &e.StartDateTime, &e.CompleteDateTime)
 
 		if err != nil {
 			return nil, err
@@ -195,6 +240,29 @@ func SetExamQuestionAnswers(e *exam) error {
 				}
 			}
 		}
+	}
+
+	return tx.Commit()
+}
+
+func SetExamFinished(e *exam) error {
+	tx, err := DB.Begin()
+
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
+
+	// Remove all existing answers for this exam
+	_, err = tx.Exec(`
+    UPDATE exams 
+		   SET complete_date_time = NOW()
+		 WHERE id = ?
+	`, e.ID)
+
+	if err != nil {
+		return err
 	}
 
 	return tx.Commit()
