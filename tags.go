@@ -142,6 +142,43 @@ func GetTagsByQuestion(q *question) (*[]*tag, error) {
 	return &ret, nil
 }
 
+func GetTagsByExam(e *exam) (*[]*tag, error) {
+
+	ret := make([]*tag, 0)
+
+	rows, err := DB.Query(`
+		SELECT t.id
+		     , t.display_name 
+			FROM tags t 
+		 INNER JOIN exam_tags et ON et.fk_tag_id = t.id
+		 WHERE et.fk_exam_id=?
+	`, e.ID)
+
+	if err != nil {
+		fmt.Printf("Error getting tags for exam %v, %v", e.ID, err)
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		t := tag{
+			Syllabus: e.Syllabus,
+		}
+
+		err := rows.Scan(&t.ID, &t.DisplayName)
+
+		if err != nil {
+			fmt.Printf("Error getting tags for exam %v, %v", e.ID, err)
+			return nil, err
+		}
+
+		ret = append(ret, &t)
+	}
+
+	return &ret, nil
+}
+
 func GetTagBySyllabusAndDisplayName(s *syllabus, d string) (*tag, error) {
 
 	ret := tag{

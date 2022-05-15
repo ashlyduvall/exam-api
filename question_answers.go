@@ -53,6 +53,7 @@ func GetQuestionAnswersByQuestionAndExam(q *question, e *exam) (*[]*question_ans
 			 AND eqa.fk_exam_id = ?
 			 AND eqa.fk_selected_answer_id = qa.id
 		 WHERE qa.fk_question_id=?
+		 ORDER BY MD5(CONCAT(eqa.fk_exam_id, '_', qa.fk_question_id, '_', qa.id))
 	`, e.ID, q.ID)
 	if err != nil {
 		return nil, err

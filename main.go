@@ -40,7 +40,6 @@ func main() {
 	BuildTagRoutes(router)
 	BuildQuestionRoutes(router)
 	BuildExamRoutes(router)
-	BuildExamTagsetRoutes(router)
 
 	router.Run(listenAddress)
 }

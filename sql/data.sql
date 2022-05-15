@@ -39,25 +39,18 @@ INSERT IGNORE INTO question_answers (id, fk_question_id, is_correct_answer, body
   (9, 5, true, "Multichoice correct answer to question 5"), (10, 5, false, "Incorrect answer to question 5"), (11, 5, true, "Multichoice correct answer to question 5")
 ;
 
--- Exam Tagset
-INSERT IGNORE INTO exam_tagsets VALUES
-  (1, 1, "Example Exam Tagset 1 - tag 1"),
-  (2, 1, "Example Exam Tagset 2 - tags 3 and 4"),
-  (3, 1, "Example Exam Tagset 2 - tag 5")
+-- Exams
+INSERT IGNORE INTO exams VALUES
+  (1, 1, NOW(), NULL, NULL),
+  (2, 1, NOW(), NOW(), NULL),
+  (3, 1, NOW(), NOW(), NOW())
 ;
 
 -- Exam Tagset Tags
-INSERT IGNORE INTO exam_tagset_tags VALUES
+INSERT IGNORE INTO exam_tags VALUES
   (1, 1),
   (2, 3), (2, 4),
   (3, 5)
-;
-
--- Exams
-INSERT IGNORE INTO exams VALUES
-  (1, 1, 1, NOW(), NULL, NULL),
-  (2, 1, 2, NOW(), NOW(), NULL),
-  (3, 1, 3, NOW(), NOW(), NOW())
 ;
 
 -- Exam Questions

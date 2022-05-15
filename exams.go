@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 )
 
 type exam struct {
 	ID               int          `json:"id"`
 	Syllabus         *syllabus    `json:"syllabus"`
-	ExamTagset       *exam_tagset `json:"exam_tagset"`
+	Tags             *[]*tag      `json:"tags"`
 	Questions        *[]*question `json:"questions"`
 	CreateDateTime   string       `json:"create_date_time"`
 	StartDateTime    string       `json:"start_date_time"`
@@ -22,6 +23,7 @@ func BuildExamRoutes(router *gin.Engine) {
 	router.GET("/exams/:id", httpGetExamById)
 	router.POST("/exams/save", httpPostSaveExam)
 	router.POST("/exams/finish", httpPostFinishExam)
+	router.POST("/exams/new", httpPostNewExam)
 }
 
 // -------------------
@@ -104,6 +106,51 @@ func httpPostFinishExam(ret *gin.Context) {
 	ret.JSON(http.StatusOK, gin.H{"message": "Exam Finished!"})
 }
 
+func httpPostNewExam(ret *gin.Context) {
+	var ts []tag
+	var e exam
+	ret.BindJSON(&ts)
+
+	s, err := GetSyllabusById("1")
+
+	if err != nil {
+		ret.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	e.Syllabus = s
+
+	err = NewExam(&e)
+
+	if err != nil {
+		ret.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	err = SetExamTags(&e, &ts)
+
+	if err != nil {
+		ret.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	err = SetExamQuestions(&e)
+
+	if err != nil {
+		ret.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	exam, err := GetExamById(strconv.Itoa(e.ID))
+
+	if err != nil {
+		ret.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ret.JSON(http.StatusOK, exam)
+}
+
 // -------------------
 // Raw Methods Follow
 // -------------------
@@ -132,13 +179,13 @@ func GetExamById(id string) (*exam, error) {
 
 	e.Syllabus = s
 
-	etc, err := GetExamTagsetByExam(e)
+	etc, err := GetTagsByExam(&e)
 
 	if err != nil {
 		return nil, err
 	}
 
-	e.ExamTagset = etc
+	e.Tags = etc
 	q, err := GetQuestionsByExam(&e)
 
 	if err != nil {
@@ -188,13 +235,13 @@ func GetExamsBySyllabus(s *syllabus, get_finished bool) (*[]*exam, error) {
 			return nil, err
 		}
 
-		etc, err := GetExamTagsetByExam(e)
+		etc, err := GetTagsByExam(&e)
 
 		if err != nil {
 			return nil, err
 		}
 
-		e.ExamTagset = etc
+		e.Tags = etc
 		q, err := GetQuestionsByExam(&e)
 
 		if err != nil {
@@ -260,6 +307,117 @@ func SetExamFinished(e *exam) error {
 		   SET complete_date_time = NOW()
 		 WHERE id = ?
 	`, e.ID)
+
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func NewExam(e *exam) error {
+	tx, err := DB.Begin()
+
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
+
+	result, err := tx.Exec(`
+    INSERT INTO exams (fk_syllabus_id, create_date_time, start_date_time)
+		 VALUES (?, NOW(), NOW())
+	`, e.Syllabus.ID)
+
+	if err != nil {
+		return err
+	}
+
+	id, err := result.LastInsertId()
+
+	if err != nil {
+		return err
+	}
+
+	e.ID = int(id)
+
+	return tx.Commit()
+}
+
+func SetExamTags(e *exam, ts *[]tag) error {
+	tx, err := DB.Begin()
+
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
+
+	// Remove all existing tags for this exam
+	_, err = tx.Exec(`
+		DELETE FROM exam_tags WHERE fk_exam_id=?
+	`, e.ID)
+
+	if err != nil {
+		return err
+	}
+
+	for _, t := range *ts {
+		_, err := tx.Exec(`
+      INSERT INTO exam_tags (fk_exam_id, fk_tag_id)
+			  VALUES (?, ?)
+		`, e.ID, t.ID)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
+func SetExamQuestions(e *exam) error {
+	tx, err := DB.Begin()
+	exam_question_limit := 50 // @TODO
+
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
+
+	// Remove all existing questions for this exam
+	_, err = tx.Exec(`
+		DELETE
+		  FROM exam_question_answers
+		 WHERE fk_exam_id=?
+	`, e.ID)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(`
+		DELETE
+		  FROM exam_questions
+		 WHERE fk_exam_id=?
+	`, e.ID)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(`
+    INSERT INTO exam_questions (fk_exam_id, fk_question_id)
+		 SELECT DISTINCT e.id
+		      , qt.fk_question_id
+		   FROM exams e
+      INNER JOIN exam_tags et ON et.fk_exam_id = e.id
+		  INNER JOIN question_tags qt ON qt.fk_tag_id = et.fk_tag_id
+			WHERE e.id = ?
+			ORDER BY MD5(CONCAT(e.id,'_',qt.fk_question_id))
+			LIMIT ?
+	`, e.ID, exam_question_limit)
 
 	if err != nil {
 		return err
