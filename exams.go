@@ -24,6 +24,7 @@ func BuildExamRoutes(router *gin.Engine) {
 	router.POST("/exams/save", httpPostSaveExam)
 	router.POST("/exams/finish", httpPostFinishExam)
 	router.POST("/exams/new", httpPostNewExam)
+	router.POST("/exams/new_all_tags", httpPostNewExamAllTags)
 }
 
 // -------------------
@@ -134,7 +135,43 @@ func httpPostNewExam(ret *gin.Context) {
 		return
 	}
 
-	err = SetExamQuestions(&e)
+	err = SetExamQuestions(&e, false)
+
+	if err != nil {
+		ret.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	exam, err := GetExamById(strconv.Itoa(e.ID))
+
+	if err != nil {
+		ret.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ret.JSON(http.StatusOK, exam)
+}
+
+func httpPostNewExamAllTags(ret *gin.Context) {
+	var e exam
+
+	s, err := GetSyllabusById("1")
+
+	if err != nil {
+		ret.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	e.Syllabus = s
+
+	err = NewExam(&e)
+
+	if err != nil {
+		ret.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	err = SetExamQuestions(&e, true)
 
 	if err != nil {
 		ret.JSON(http.StatusInternalServerError, err)
@@ -376,7 +413,7 @@ func SetExamTags(e *exam, ts *[]tag) error {
 	return tx.Commit()
 }
 
-func SetExamQuestions(e *exam) error {
+func SetExamQuestions(e *exam, uses_all_tags bool) error {
 	tx, err := DB.Begin()
 	exam_question_limit := 50 // @TODO
 
@@ -407,17 +444,28 @@ func SetExamQuestions(e *exam) error {
 		return err
 	}
 
-	_, err = tx.Exec(`
-    INSERT INTO exam_questions (fk_exam_id, fk_question_id)
+	if uses_all_tags {
+		_, err = tx.Exec(`
+		INSERT INTO exam_questions (fk_exam_id, fk_question_id)
+		 SELECT DISTINCT ?
+					, qt.fk_question_id
+			 FROM question_tags qt
+			ORDER BY MD5(CONCAT(?,'_',qt.fk_question_id))
+			LIMIT ?
+	`, e.ID, e.ID, exam_question_limit)
+	} else {
+		_, err = tx.Exec(`
+		INSERT INTO exam_questions (fk_exam_id, fk_question_id)
 		 SELECT DISTINCT e.id
-		      , qt.fk_question_id
-		   FROM exams e
-      INNER JOIN exam_tags et ON et.fk_exam_id = e.id
-		  INNER JOIN question_tags qt ON qt.fk_tag_id = et.fk_tag_id
+					, qt.fk_question_id
+			 FROM exams e
+			INNER JOIN exam_tags et ON et.fk_exam_id = e.id
+			INNER JOIN question_tags qt ON qt.fk_tag_id = et.fk_tag_id
 			WHERE e.id = ?
 			ORDER BY MD5(CONCAT(e.id,'_',qt.fk_question_id))
 			LIMIT ?
 	`, e.ID, exam_question_limit)
+	}
 
 	if err != nil {
 		return err
