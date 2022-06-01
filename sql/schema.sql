@@ -74,3 +74,6 @@ CREATE TABLE IF NOT EXISTS exam_question_answers (
   CONSTRAINT FOREIGN KEY (fk_question_id) REFERENCES questions (id),
   CONSTRAINT FOREIGN KEY (fk_selected_answer_id) REFERENCES question_answers (id)
 );
+
+-- Syllabus
+INSERT IGNORE INTO syllabus VALUES (1, 'Biochem');
