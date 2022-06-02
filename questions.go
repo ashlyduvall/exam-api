@@ -1,8 +1,10 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	_ "github.com/go-sql-driver/mysql"
 	"net/http"
 	"strings"
 )
@@ -21,6 +23,7 @@ type question struct {
 
 func BuildQuestionRoutes(router *gin.Engine) {
 	router.GET("/questions/all", httpGetAllQuestions)
+	router.GET("/questions/all/:filter", httpGetAllQuestionsWithFilter)
 	router.GET("/questions/:id", httpGetQuestionById)
 	router.POST("/questions/save", httpPostSaveQuestion)
 }
@@ -33,7 +36,26 @@ func httpGetAllQuestions(ret *gin.Context) {
 		return
 	}
 
-	q, err := GetQuestionsBySyllabus(s)
+	q, err := GetQuestionsBySyllabus(s, nil)
+	if err != nil {
+		fmt.Printf("Error getting all questions: %v\n", err)
+		ret.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ret.JSON(http.StatusOK, q)
+}
+
+func httpGetAllQuestionsWithFilter(ret *gin.Context) {
+	filter_string := ret.Param("filter")
+	s, err := GetSyllabusById("1")
+	if err != nil {
+		fmt.Printf("Error getting all questions - couldn't find Syllabus: %v\n", err)
+		ret.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	q, err := GetQuestionsBySyllabus(s, &filter_string)
 	if err != nil {
 		fmt.Printf("Error getting all questions: %v\n", err)
 		ret.JSON(http.StatusInternalServerError, err)
@@ -98,10 +120,31 @@ func httpPostSaveQuestion(ret *gin.Context) {
 // Raw Methods Follow
 // -------------------
 
-func GetQuestionsBySyllabus(s *syllabus) (*[]*question, error) {
+func GetQuestionsBySyllabus(s *syllabus, filter_string *string) (*[]*question, error) {
 	var ret []*question
+	var rows *sql.Rows
+	var sql string
+	var err error
 
-	rows, err := DB.Query("SELECT q.id, q.body FROM questions q WHERE q.fk_syllabus_id=?", s.ID)
+	if filter_string != nil {
+		sql = `
+      SELECT DISTINCT q.id
+			     , q.body 
+				FROM questions q 
+			  LEFT JOIN question_tags qt ON qt.fk_question_id = q.id
+				LEFT JOIN tags t ON t.id = qt.fk_tag_id
+			 WHERE q.fk_syllabus_id=? 
+			   AND (
+				 q.body LIKE CONCAT("%",?,"%")
+				 OR t.display_name LIKE CONCAT("%",?,"%")
+			 )
+			 LIMIT 50
+		`
+		rows, err = DB.Query(sql, s.ID, filter_string, filter_string)
+	} else {
+		sql = "SELECT q.id, q.body FROM questions q WHERE q.fk_syllabus_id=? LIMIT 50"
+		rows, err = DB.Query(sql, s.ID)
+	}
 
 	if err != nil {
 		return nil, err
