@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 func CORSMiddleware() gin.HandlerFunc {
@@ -19,6 +20,10 @@ func CORSMiddleware() gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+func healthcheck(ret *gin.Context) {
+	ret.JSON(http.StatusOK, nil)
 }
 
 func main() {
@@ -40,6 +45,8 @@ func main() {
 	BuildTagRoutes(router)
 	BuildQuestionRoutes(router)
 	BuildExamRoutes(router)
+
+	router.GET("/healthcheck", healthcheck)
 
 	router.Run(listenAddress)
 }
