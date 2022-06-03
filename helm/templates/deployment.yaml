@@ -43,7 +43,7 @@ spec:
         name: api
         envFrom:
         - secretRef:
-          name: api-db-config
+            name: api-db-config
         ports:
         - containerPort: 8081
           protocol: TCP
