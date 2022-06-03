@@ -49,12 +49,14 @@ deploy_container:
     - if: '$CI_COMMIT_BRANCH == "master"'
       when: manual
   script:
+    - set +x
     - kubectl create namespace exam
     - |
       kubectl create secret generic gitlab-registry \
       --namespace exam \
       --from-file=.dockerconfigjson=dockerconfig.json \
       --type=kubernetes.io/dockerconfigjson
+    - set -x
     - cd helm
     - |
       helm upgrade --install --atomic --create-namespace --wait \
