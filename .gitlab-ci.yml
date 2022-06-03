@@ -52,6 +52,7 @@ deploy_container:
   script:
     - set +e
     - kubectl create namespace exam
+    - kubectl delete secret --namespace exam gitlab-registry --ignore-not-found
     - |
       kubectl create secret generic gitlab-registry \
       --namespace exam \
