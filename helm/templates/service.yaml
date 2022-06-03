@@ -6,7 +6,6 @@ metadata:
   name: api
   namespace: exam
 spec:
-  externalTrafficPolicy: Cluster
   ports:
   - name: http
     port: 8081
