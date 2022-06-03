@@ -24,6 +24,8 @@ spec:
       labels:
         k8s-app: exam-api
     spec:
+      imagePullSecrets:
+        - name: gitlab-registry
       automountServiceAccountToken: true
       containers:
       - image: {{ .Values.image }}
