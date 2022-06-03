@@ -28,20 +28,6 @@ build_image:
         .
     - docker push "$CI_REGISTRY_IMAGE"":""$CI_BUILD_REF_SLUG"
 
-get_docker_login_token:
-  stage: generate_credentials
-  image: registry.duvall.org.uk/docker1/docker-in-docker:20.10.5-dind
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "master"'
-      when: on_success
-    - when: never
-  script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - mv /root/.docker/config.json dockerconfig.json
-  artifacts:
-    paths:
-      - dockerconfig.json
-
 deploy_container:
   stage: deploy
   image: registry.duvall.org.uk/docker1/alpine/runner:3.13.3
@@ -50,15 +36,6 @@ deploy_container:
       when: on_success
     - when: never
   script:
-    - set +e
-    - kubectl create namespace exam
-    - kubectl delete secret --namespace exam gitlab-registry --ignore-not-found
-    - |
-      kubectl create secret generic gitlab-registry \
-      --namespace exam \
-      --from-file=.dockerconfigjson=dockerconfig.json \
-      --type=kubernetes.io/dockerconfigjson
-    - set -e
     - cd helm
     - |
       helm upgrade --install --atomic --create-namespace --wait \
