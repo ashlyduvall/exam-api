@@ -14,7 +14,7 @@ build_image:
     - if: '$CI_COMMIT_BRANCH == "master"'
       when: on_success
       changes:
-        - *.go
+        - "*.go"
         - Dockerfile
     - when: never
   script:
