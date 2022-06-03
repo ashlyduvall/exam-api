@@ -13,6 +13,9 @@ build_image:
   rules:
     - if: '$CI_COMMIT_BRANCH == "master"'
       when: on_success
+      changes:
+        - *.go
+        - Dockerfile
     - when: never
   script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
@@ -26,10 +29,9 @@ build_image:
 
 deploy_container:
   stage: deploy
-  image: alpine
+  image: registry.duvall.org.uk/docker1/alpine/runner:3.13.3
   rules:
     - if: '$CI_COMMIT_BRANCH == "master"'
       when: manual
-    - when: never
   script:
-    - echo "Hello, world"
+    - kubectl version
