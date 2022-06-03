@@ -46,7 +46,7 @@ func main() {
 	BuildQuestionRoutes(router)
 	BuildExamRoutes(router)
 
-	router.GET("/healthcheck", healthcheck)
+	router.GET("/health", healthcheck)
 
 	router.Run(listenAddress)
 }
