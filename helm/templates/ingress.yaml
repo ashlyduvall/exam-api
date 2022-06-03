@@ -1,0 +1,16 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: HTTP
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+  name: api
+  namespace: exam
+spec:
+  rules:
+  - host: exam-api.duvall.org.uk
+    http:
+      paths:
+      - backend:
+          serviceName: api
+          servicePort: http

@@ -34,4 +34,11 @@ deploy_container:
     - if: '$CI_COMMIT_BRANCH == "master"'
       when: manual
   script:
-    - kubectl version
+    - cd helm
+    - helm upgrade --install --atomic --create-namespace --wait \
+      --namespace exam \
+      -f values.yaml \
+      -s image="$CI_REGISTRY_IMAGE"":""$CI_BUILD_REF_SLUG" \
+      -s db.pass="$DB_PASS" \
+      exam-api \
+      .

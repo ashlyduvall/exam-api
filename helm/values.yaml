@@ -1,0 +1,12 @@
+---
+#
+# Values for the Exam backend install
+#
+image: "SET_AT_RUNTIME"
+
+db:
+  user: "ashly"
+  host: "mysql.vm.duvall.org.uk"
+  port: "3306"
+  pass: "SET_AT_RUNTIME"
+  schema: "exam"
