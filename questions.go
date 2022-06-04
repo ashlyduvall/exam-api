@@ -13,6 +13,7 @@ type question struct {
 	ID              int                 `json:"id"`
 	Syllabus        *syllabus           `json:"syllabus"`
 	Body            string              `json:"body"`
+	Notes           string              `json:"notes"`
 	Tags            *[]*tag             `json:"tags"`
 	QuestionAnswers *[]*question_answer `json:"question_answers"`
 }
@@ -121,7 +122,7 @@ func httpPostSaveQuestion(ret *gin.Context) {
 // -------------------
 
 func GetQuestionsBySyllabus(s *syllabus, filter_string *string) (*[]*question, error) {
-	var ret []*question
+	ret := make([]*question, 0)
 	var rows *sql.Rows
 	var sql string
 	var err error
@@ -130,6 +131,7 @@ func GetQuestionsBySyllabus(s *syllabus, filter_string *string) (*[]*question, e
 		sql = `
       SELECT DISTINCT q.id
 			     , q.body 
+			     , q.notes 
 				FROM questions q 
 			  LEFT JOIN question_tags qt ON qt.fk_question_id = q.id
 				LEFT JOIN tags t ON t.id = qt.fk_tag_id
@@ -142,7 +144,7 @@ func GetQuestionsBySyllabus(s *syllabus, filter_string *string) (*[]*question, e
 		`
 		rows, err = DB.Query(sql, s.ID, filter_string, filter_string)
 	} else {
-		sql = "SELECT q.id, q.body FROM questions q WHERE q.fk_syllabus_id=? LIMIT 50"
+		sql = "SELECT q.id, q.body, q.notes FROM questions q WHERE q.fk_syllabus_id=? LIMIT 50"
 		rows, err = DB.Query(sql, s.ID)
 	}
 
@@ -157,7 +159,7 @@ func GetQuestionsBySyllabus(s *syllabus, filter_string *string) (*[]*question, e
 			Syllabus: s,
 		}
 
-		err := rows.Scan(&q.ID, &q.Body)
+		err := rows.Scan(&q.ID, &q.Body, &q.Notes)
 		if err != nil {
 			return nil, err
 		}
@@ -183,7 +185,7 @@ func GetQuestionsBySyllabus(s *syllabus, filter_string *string) (*[]*question, e
 func GetQuestionById(id string) (*question, error) {
 	q := question{}
 	var syllabus_id string
-	err := DB.QueryRow("SELECT q.id, q.fk_syllabus_id, q.body FROM questions q WHERE id=?", id).Scan(&q.ID, &syllabus_id, &q.Body)
+	err := DB.QueryRow("SELECT q.id, q.fk_syllabus_id, q.body, q.notes FROM questions q WHERE id=?", id).Scan(&q.ID, &syllabus_id, &q.Body, &q.Notes)
 	if err != nil {
 		return nil, err
 	}
@@ -212,7 +214,7 @@ func GetQuestionById(id string) (*question, error) {
 func GetQuestionByIdWithExamData(id string, e *exam) (*question, error) {
 	q := question{}
 	var syllabus_id string
-	err := DB.QueryRow("SELECT q.id, q.fk_syllabus_id, q.body FROM questions q WHERE id=?", id).Scan(&q.ID, &syllabus_id, &q.Body)
+	err := DB.QueryRow("SELECT q.id, q.fk_syllabus_id, q.body, q.notes FROM questions q WHERE id=?", id).Scan(&q.ID, &syllabus_id, &q.Body, &q.Notes)
 	if err != nil {
 		return nil, err
 	}
@@ -377,8 +379,8 @@ func NewQuestion(q *question) error {
 	defer tx.Rollback()
 
 	result, err := tx.Exec(`
-    INSERT INTO questions (fk_syllabus_id, body) VALUES (?, ?)
-	`, q.Syllabus.ID, q.Body)
+    INSERT INTO questions (fk_syllabus_id, body, notes) VALUES (?, ?, ?)
+	`, q.Syllabus.ID, q.Body, q.Notes)
 
 	if err != nil {
 		return err
@@ -407,8 +409,9 @@ func SetQuestionBody(q *question) error {
 	_, err = tx.Exec(`
 		UPDATE questions
 			 SET body=?
+			   , notes=?
 		 WHERE id=?
-	`, q.Body, q.ID)
+	`, q.Body, q.Notes, q.ID)
 
 	if err != nil {
 		return err

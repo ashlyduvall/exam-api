@@ -5,7 +5,6 @@ metadata:
   labels:
     k8s-app: exam-api
   name: api
-  namespace: exam
 spec:
   progressDeadlineSeconds: 600
   replicas: 1
@@ -23,6 +22,7 @@ spec:
       creationTimestamp: null
       labels:
         k8s-app: exam-api
+        commit-hash: "{{ .Values.commit_hash }}"
     spec:
       imagePullSecrets:
         - name: gitlab-registry

@@ -4,7 +4,6 @@ metadata:
   labels:
     k8s-app: exam-api
   name: api
-  namespace: exam
 spec:
   ports:
   - name: http
