@@ -1,8 +1,8 @@
 -- DB Schema for the exam app
 
-DROP DATABASE IF EXISTS exam;
-CREATE DATABASE IF NOT EXISTS exam;
-USE exam;
+DROP DATABASE IF EXISTS exam_staging;
+CREATE DATABASE IF NOT EXISTS exam_staging;
+USE exam_staging;
 
 CREATE TABLE IF NOT EXISTS syllabus (
   id INT(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS questions (
   id INT(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
   fk_syllabus_id INT(11) NOT NULL,
   body TEXT,
+  notes TEXT,
   CONSTRAINT FOREIGN KEY (fk_syllabus_id) REFERENCES syllabus (id)
 );
 
@@ -76,4 +77,4 @@ CREATE TABLE IF NOT EXISTS exam_question_answers (
 );
 
 -- Syllabus
-INSERT IGNORE INTO syllabus VALUES (1, 'Biochem');
+INSERT IGNORE INTO syllabus VALUES (1, 'Tech');

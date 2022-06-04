@@ -1,7 +1,7 @@
-USE exam;
+USE exam_staging;
 
 -- Syllabus
-INSERT IGNORE INTO syllabus VALUES (1, 'Test Syllabus');
+INSERT IGNORE INTO syllabus VALUES (1, 'Tech');
 
 -- Tags
 INSERT IGNORE INTO tags VALUES

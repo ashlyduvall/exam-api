@@ -5,10 +5,9 @@ metadata:
     nginx.ingress.kubernetes.io/backend-protocol: HTTP
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
   name: api
-  namespace: exam
 spec:
   rules:
-  - host: exam-api.duvall.org.uk
+  - host: exam-api.stage.duvall.org.uk
     http:
       paths:
       - backend:

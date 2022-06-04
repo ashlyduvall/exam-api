@@ -11,12 +11,9 @@ build_image:
   stage: build
   image: registry.duvall.org.uk/docker1/docker-in-docker:20.10.5-dind
   rules:
-    - if: '$CI_COMMIT_BRANCH == "master"'
-      when: on_success
-      changes:
+    - changes:
         - "*.go"
         - Dockerfile
-    - when: never
   script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - |
@@ -26,6 +23,21 @@ build_image:
         -f Dockerfile \
         .
     - docker push "$CI_REGISTRY_IMAGE"":""$CI_BUILD_REF_SLUG"
+
+deploy_container_stage:
+  stage: deploy
+  image: registry.duvall.org.uk/docker1/alpine/runner:3.13.3
+  script:
+    - cd helm
+    - |
+      helm upgrade --install --atomic --create-namespace --wait \
+      --namespace exam-staging \
+      --values values-staging.yaml \
+      --set image="$CI_REGISTRY_IMAGE"":""$CI_BUILD_REF_SLUG" \
+      --set commit_hash="$CI_COMMIT_SHORT_SHA" \
+      --set db.pass="$DB_PASS" \
+      exam-api \
+      .
 
 deploy_container:
   stage: deploy
@@ -41,6 +53,7 @@ deploy_container:
       --namespace exam \
       --values values.yaml \
       --set image="$CI_REGISTRY_IMAGE"":""$CI_BUILD_REF_SLUG" \
+      --set commit_hash="$CI_COMMIT_SHORT_SHA" \
       --set db.pass="$DB_PASS" \
       exam-api \
       .
