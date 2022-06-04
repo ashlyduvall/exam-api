@@ -4,6 +4,7 @@
 #
 image: "SET_AT_RUNTIME"
 commit_hash: "SET_AT_RUNTIME"
+ingress_hostname: "exam-api.stage.duvall.org.uk"
 
 db:
   user: "ashly"

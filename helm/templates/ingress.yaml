@@ -7,7 +7,7 @@ metadata:
   name: api
 spec:
   rules:
-  - host: exam-api.stage.duvall.org.uk
+  - host: {{ .Values.ingress_hostname }}
     http:
       paths:
       - backend:
