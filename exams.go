@@ -448,9 +448,9 @@ func SetExamQuestions(e *exam, uses_all_tags bool) error {
 		_, err = tx.Exec(`
 		INSERT INTO exam_questions (fk_exam_id, fk_question_id)
 		 SELECT DISTINCT ?
-					, qt.fk_question_id
-			 FROM question_tags qt
-			ORDER BY MD5(CONCAT(?,'_',qt.fk_question_id))
+					, q.id
+			 FROM questions q
+			ORDER BY MD5(CONCAT(?,'_',q.id))
 			LIMIT ?
 	`, e.ID, e.ID, exam_question_limit)
 	} else {
